@@ -9,12 +9,35 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import mysql.connector
+import re
+from nltk.tokenize import word_tokenize
+
 
 app = Flask(__name__)
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
  
+
+
+def data_cleaning(text):
+    # Remove HTML Tags
+    text = re.sub(r'<.*?>', '', text)
+
+    # Remove Special Characters
+    text = re.sub(r'[^a-zA-Z\s]', '', text)
+
+    # Lowercasing
+    tokens = text.lower()
+
+    # Tokenization
+    tokens = word_tokenize(text)
+
+    # Remove Extra Whitespace
+    text = ' '.join(text.split())
+
+    return text
+
  
 @app.route("/")
 def index():
@@ -164,6 +187,7 @@ def recommend_songs(user_profile, cosine_sim, filtered_df):
 @app.route('/', methods=['POST'])
 def predict():
     para = request.form.get('para')
+    para = data_cleaning(para)
     tokenizer = load_tokenizer()
     sequences = tokenizer.texts_to_sequences([para])
     padded_sequences = pad_sequences(sequences, padding='post', maxlen=35)
